@@ -11,8 +11,8 @@
 // Run: node index.js  →  http://localhost:3000
 
 // Sebelum itu, tuliskan nama, NIM, di bawah ini, dan apabila sudah selesai, isi refleksi di bawah ini (dalam bentuk comment)
-// Nama: ...
-// NIM: ...
+// Nama: Fabio Gusman Firdaus
+// NIM: 24110400027
 // Refleksi:
 // blablabla
 // blablabla
@@ -27,14 +27,32 @@ const PORT = 3000;
 // ── Middleware ───────────────────────────────────────────────
 // TODO: tambahkan middleware agar Express bisa baca JSON dari request body
 // Petunjuk: satu baris, pakai express.json()
-
+app.use(express.json());
 
 // ── In-memory "database" ─────────────────────────────────────
 // Data awal — jangan diubah, dipakai untuk pengujian
 let students = [
-  { id: 1, name: "Andi Saputra",    nim: "231001", major: "Informatika",          gpa: 3.75 },
-  { id: 2, name: "Bella Kurnia",    nim: "231002", major: "Sistem Informasi",      gpa: 3.50 },
-  { id: 3, name: "Candra Wijaya",   nim: "231003", major: "Informatika",          gpa: 3.20 },
+  {
+    id: 1,
+    name: "Andi Saputra",
+    nim: "231001",
+    major: "Informatika",
+    gpa: 3.75,
+  },
+  {
+    id: 2,
+    name: "Bella Kurnia",
+    nim: "231002",
+    major: "Sistem Informasi",
+    gpa: 3.5,
+  },
+  {
+    id: 3,
+    name: "Candra Wijaya",
+    nim: "231003",
+    major: "Informatika",
+    gpa: 3.2,
+  },
 ];
 
 // nextId dipakai untuk generate id otomatis saat POST
@@ -46,8 +64,17 @@ let nextId = 4;
 // ════════════════════════════════════════════════════════════
 app.get("/students", (req, res) => {
   // TODO: kirim response berisi seluruh array students dengan status 200
+  res.status(200).json(students);
+});
 
+app.get("/students/search", (req, res) => {
+  const major = req.query.major;
 
+  const result = students.filter(
+    (student) => student.major.toLowerCase() === major.toLowerCase(),
+  );
+
+  res.status(200).json(result);
 });
 
 // ════════════════════════════════════════════════════════════
@@ -64,8 +91,17 @@ app.get("/students/:id", (req, res) => {
   // TODO: jika tidak ditemukan, kirim 404 + pesan error
 
   // TODO: jika ditemukan, kirim data mahasiswanya
+  const id = parseInt(req.params.id);
 
+  const student = students.find((student) => student.id === id);
 
+  if (!student) {
+    return res.status(404).json({
+      error: "Student tidak ditemukan",
+    });
+  }
+
+  res.status(200).json(student);
 });
 
 // ════════════════════════════════════════════════════════════
@@ -81,18 +117,32 @@ app.post("/students", (req, res) => {
   // TODO: validasi — cek apakah name, nim, dan major ada dan tidak kosong
   //       jika tidak valid → kirim status 400 + { error: "name, nim, dan major wajib diisi" }
 
-
   // TODO: buat object mahasiswa baru dengan struktur:
   //       { id: nextId, name, nim, major, gpa: gpa ?? 0 }
   //       lalu tambah nextId sebesar 1 (nextId++)
 
-
   // TODO: masukkan mahasiswa baru ke array students (gunakan .push())
 
-
   // TODO: kirim response status 201 + data mahasiswa baru
+  if (!name || !nim || !major) {
+    return res.status(400).json({
+      error: "name, nim, dan major wajib diisi",
+    });
+  }
 
+  const newStudent = {
+    id: nextId,
+    name,
+    nim,
+    major,
+    gpa: gpa ?? 0,
+  };
 
+  nextId++;
+
+  students.push(newStudent);
+
+  res.status(201).json(newStudent);
 });
 
 // ════════════════════════════════════════════════════════════
@@ -108,22 +158,41 @@ app.put("/students/:id", (req, res) => {
 
   // TODO: cek apakah semua field undefined — jika iya, kirim 400
 
-
   // TODO: cari index mahasiswa di array dengan .findIndex()
   //       simpan hasilnya ke variabel "index"
 
-
   // TODO: jika index === -1 (tidak ditemukan), kirim 404
-
 
   // TODO: update hanya field yang dikirim (jangan timpa yang tidak dikirim)
   //       Petunjuk: pakai if (name !== undefined) students[index].name = name
   //       lakukan hal yang sama untuk nim, major, dan gpa
 
-
   // TODO: kirim response status 200 + data mahasiswa yang sudah diupdate
+  if (
+    name === undefined &&
+    nim === undefined &&
+    major === undefined &&
+    gpa === undefined
+  ) {
+    return res.status(400).json({
+      error: "Minimal satu field harus dikirim",
+    });
+  }
 
+  const index = students.findIndex((student) => student.id === id);
 
+  if (index === -1) {
+    return res.status(404).json({
+      error: "Student tidak ditemukan",
+    });
+  }
+
+  if (name !== undefined) students[index].name = name;
+  if (nim !== undefined) students[index].nim = nim;
+  if (major !== undefined) students[index].major = major;
+  if (gpa !== undefined) students[index].gpa = gpa;
+
+  res.status(200).json(students[index]);
 });
 
 // ════════════════════════════════════════════════════════════
@@ -137,16 +206,22 @@ app.delete("/students/:id", (req, res) => {
 
   // TODO: cari index mahasiswa dengan .findIndex()
 
-
   // TODO: jika tidak ditemukan (index === -1), kirim 404
-
 
   // TODO: hapus mahasiswa dari array menggunakan .splice(index, 1)
 
-
   // TODO: kirim response status 204 tanpa body (gunakan .send())
+  const index = students.findIndex((student) => student.id === id);
 
+  if (index === -1) {
+    return res.status(404).json({
+      error: "Student tidak ditemukan",
+    });
+  }
 
+  students.splice(index, 1);
+
+  res.status(204).send();
 });
 
 // ════════════════════════════════════════════════════════════
@@ -163,7 +238,6 @@ app.delete("/students/:id", (req, res) => {
 // ════════════════════════════════════════════════════════════
 // TODO: implementasikan endpoint GET /students/search di sini
 //       (pindahkan ke ATAS endpoint GET /students/:id setelah selesai)
-
 
 // ── Start server ─────────────────────────────────────────────
 app.listen(PORT, () => {
